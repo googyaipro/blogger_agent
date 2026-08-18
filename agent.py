@@ -264,10 +264,21 @@ def get_google_trends(keyword: str = "travel", geo: str = "US") -> dict:
     """
     Fetches real-time search trends for a keyword.
     """
-    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{keyword}') ===", file=sys.stderr, flush=True)
+    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{keyword}', geo='{geo}') ===", file=sys.stderr, flush=True)
     try:
         from pytrends.request import TrendReq
-        pytrends = TrendReq(hl='en-US', tz=360)
+        
+        proxy_env = os.getenv("TRENDS_PROXIES", "").strip()
+        if proxy_env:
+            raw_list = [p.strip() for p in proxy_env.split(",") if p.strip()]
+            proxy_list = [p if "://" in p else f"http://{p}" for p in raw_list]
+        else:
+            proxy_list = []
+
+        if proxy_list:
+            print(f"=== USING TRENDS PROXIES: {proxy_list} ===", file=sys.stderr, flush=True)
+
+        pytrends = TrendReq(hl='en-US', tz=360, proxies=proxy_list)
         pytrends.build_payload([keyword[:20]], cat=0, timeframe='today 7-d', geo=geo)
         related = pytrends.related_topics()
         top_topics = []
