@@ -9,6 +9,7 @@ CLIENT_ID = os.getenv("OAUTH_CLIENT_ID", "your_client_id_here")
 CLIENT_SECRET = os.getenv("OAUTH_CLIENT_SECRET", "your_client_secret_here")
 
 SCOPES = [
+    "https://www.googleapis.com/auth/cloud-platform",
     "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/documents",
     "https://www.googleapis.com/auth/gmail.send",

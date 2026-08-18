@@ -68,6 +68,10 @@ def get_user_credentials(scopes):
     client_id = os.getenv("OAUTH_CLIENT_ID")
     client_secret = os.getenv("OAUTH_CLIENT_SECRET")
 
+    all_scopes = list(scopes) if scopes else []
+    if "https://www.googleapis.com/auth/cloud-platform" not in all_scopes:
+        all_scopes.append("https://www.googleapis.com/auth/cloud-platform")
+
     if refresh_token:
         from google.oauth2.credentials import Credentials
         return Credentials(
@@ -76,10 +80,10 @@ def get_user_credentials(scopes):
             client_id=client_id,
             client_secret=client_secret,
             token_uri="https://oauth2.googleapis.com/token",
-            scopes=scopes,
+            scopes=all_scopes,
         )
     import google.auth
-    creds, _ = google.auth.default(scopes=scopes)
+    creds, _ = google.auth.default(scopes=all_scopes)
     return creds
 
 # ── Email Integration Tool via Gmail API (OAuth 2.0) ──────────────────────────
