@@ -1,0 +1,10 @@
+google-adk
+python-dotenv
+mcp>=1.0.0,<2.0.0
+pytrends
+google-api-python-client>=2.0.0
+google-auth-httplib2
+google-auth-oauthlib
+google-cloud-storage
+ddgs
+
