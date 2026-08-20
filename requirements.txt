@@ -1,5 +1,6 @@
-google-adk
-python-dotenv
+google-adk>=2.7.0
+google-genai>=2.19.0
+python-dotenv>=1.2.3
 mcp>=1.0.0,<2.0.0
 pytrends
 google-api-python-client>=2.0.0
@@ -7,5 +8,4 @@ google-auth-httplib2
 google-auth-oauthlib
 google-cloud-storage
 google-cloud-bigquery>=3.0.0
-ddgs
-
+ddgs>=9.15.0
