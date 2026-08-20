@@ -1,15 +1,20 @@
-# 🚀 Blogger Agent MCP & AI Content Generation Engine
+# 🚀 Blogger Agent MCP & AI Universal Content Generation Engine
 
-**Blogger Agent MCP** — это автономная мультиагентная система на базе **Google Agent Development Kit (ADK)** и **Gemini 3.5 Flash**, предназначенная для глубокого анализа трендов, живого поиска актуальных фактов в вебе, автоматического построения многоточечных маршрутов путешествий в **Google Maps**, написания экспертных лонгридов, публикации документов в **Google Docs** и рассылки по **Gmail**.
+**Blogger Agent MCP** — это автономная мультиагентная система на базе **Google Agent Development Kit (ADK)** и **Gemini 3.5 Flash**, предназначенная для глубокого аналитического исследования трендов через **Google BigQuery**, живого поиска актуальных фактов в вебе, автоматического построения многоточечных маршрутов в **Google Maps**, написания экспертных лонгридов по любым профильным и междисциплинарным темам, публикации документов в **Google Docs** и рассылки по **Gmail**.
 
 ---
 
 ## 🌟 Ключевые возможности
 
-* 🧠 **Мультиагентный пайплайн (Google ADK & Gemini 3.5 Flash):** Использование специализированных субагентов `BlogPlanner` и `BlogWriter` под управлением единого оркестратора `Root Agent`.
-* 🌐 **Живой веб-поиск в реальном времени (`search_web`):** Заземление фактов (Grounding) на текущую дату для предотвращения галлюцинаций и устаревания данных LLM.
+* 🧠 **Мультиагентный универсальный пайплайн (Google ADK & Gemini 3.5 Flash):** Использование профильных субагентов `BlogPlanner` *(Senior Content Strategist & Structural Editor)* и `BlogWriter` под управлением оркестратора `Root Agent`.
+* 🔬 **Универсальность и междисциплинарная адаптация:** Идеальное проектирование и написание статей по **любым доменам**:
+  * 💻 **IT & Cloud Engineering** *(Kubernetes, Python, GCP Architecture)*
+  * 🩺 **Медицина & Косметология** *(Эстетическая дерматология, аппаратные процедуры)*
+  * 🚗 **Автопутешествия & Туризм** *(Маршруты A ➔ B ➔ C ➔ D с Google Maps)*
+  * 📊 **Бизнес & Аналитика** *(Анализ мировых рынков и трендов)*
+* 📊 **Официальный BigQuery Engine (Dual-Scope Trend Synthesis):** Замена неофициального парсинга на **прямые SQL-запросы к датасету `bigquery-public-data.google_trends`**. Одновременный синтез **локальных региональных трендов** и **общемирового контекста (Worldwide Global Trends)** без прокси и без ошибок 400!
+* 🌐 **Живой веб-поиск в реальном времени (`search_web`):** Заземление фактов (Grounding) на текущую дату для гарантированной актуальности данных 2026 года.
 * 🗺 **Гранд-Тур маршрутизатор (`get_scenic_travel_route`):** Построение сложных автопутешествий **Точка А ➔ Б ➔ В ➔ Г** с генерацией кликабельных интерактивных карт в Google Maps.
-* 📈 **Google Trends Integration:** Автоматический сбор восходящих ключевых трендов аудитории.
 * 🔒 **Делегированная OAuth 2.0 авторизация:** Создание файлов прямо на **вашем личном Google Диске** (Google Docs API) и отправка сообщений от **вашего личного Gmail** (Gmail API).
 * ☁️ **Cloud Native & Docker Ready:** Готов к моментальному развертыванию в **Google Cloud Run**, **Docker** и **Dokploy**.
 
@@ -18,20 +23,22 @@
 ## 🏗 Архитектура пайплайна
 
 ```
-[Пользовательский Запрос]
+[Пользовательский Запрос (Любая профильная или смежная тема)]
         │
         ▼
-[Root Agent (Blogger)]
+[Root Agent (Blogger Orchestrator)]
         │
-        ├──> 1. Trends Analysis (get_google_trends / pytrends)
+        ├──> 1. Official BigQuery Trends Engine (get_google_trends)
+        │        ├──> Local Regional Trends (например, geo="GE", "DE", "US")
+        │        └──> Worldwide Global Trends (Planet-wide)
         │
-        ├──> 2. Live Web Search (search_web / DDGS Grounding)
+        ├──> 2. Live Web Search (search_web / DDGS 2026 Grounding)
         │
         ├──> 3. Scenic Route Planner (get_scenic_travel_route / Places & Routes API)
         │
-        ├──> 4. Outline Generation (Sub-Agent: BlogPlanner)
+        ├──> 4. Outline Generation (Sub-Agent: BlogPlanner - Senior Content Strategist)
         │
-        ├──> 5. Full Article Generation (Sub-Agent: BlogWriter)
+        ├──> 5. Full Article Generation (Sub-Agent: BlogWriter - Master Writer)
         │
         └──> 6. Export & Delivery
                  ├── Google Drive / Docs API (save_to_google_drive)
@@ -72,8 +79,8 @@ NOTIFICATION_EMAIL=your_email@gmail.com
 
 ### 1. Клонирование репозитория и создание venv
 ```bash
-git clone https://github.com/your-username/bloggeragentmcp.git
-cd bloggeragentmcp
+git clone -b bigquery https://github.com/your-username/blogger_agent.git
+cd blogger_agent
 
 python3 -m venv .venv
 source .venv/bin/activate
@@ -129,8 +136,9 @@ gcloud run deploy bloggeragentmcpv03 \
   --source . \
   --region us-east1 \
   --allow-unauthenticated \
+  --service-account="blogger-sa@your-gcp-project.iam.gserviceaccount.com" \
   --set-secrets="OAUTH_REFRESH_TOKEN=oauth-refresh-token:latest" \
-  --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=TRUE,MODEL="gemini-3.5-flash",GOOGLE_CLOUD_LOCATION="global",GCS_BUCKET_NAME="your-gcs-bucket-name",NOTIFICATION_EMAIL="your_email@gmail.com"
+  --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=TRUE,MODEL="gemini-3.5-flash",GOOGLE_CLOUD_LOCATION="global",GCS_BUCKET_NAME="your-gcs-bucket-name",NOTIFICATION_EMAIL="your_email@gmail.com",GOOGLE_MAPS_API_KEY="AIzaSyYourGoogleMapsApiKeyHere12345"
 ```
 
 ---
@@ -139,7 +147,8 @@ gcloud run deploy bloggeragentmcpv03 \
 1. Создайте **Application** в панели Dokploy.
 2. В **Build Type** выберите `Dockerfile`.
 3. Заполните переменные во вкладке **Environment**.
-4. Нажмите **Deploy**.
+4. Загрузите файл сервисного аккаунта `/app/gcp-key.json` во вкладку **File Mounts** для Vertex AI & BigQuery.
+5. Нажмите **Deploy**.
 
 ---
 
