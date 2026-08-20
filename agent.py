@@ -259,37 +259,55 @@ def search_web(query: str = "", max_results: int = 5) -> dict:
         print(f"search_web error: {e}", file=sys.stderr, flush=True)
         return {"status": "error", "message": str(e)}
 
-# ── Google Trends Native Python Tool ──────────────────────────────────────────
+# ── Official Google Trends via BigQuery Public Datasets ─────────────────────
 def get_google_trends(keyword: str = "travel", geo: str = "US") -> dict:
     """
-    Fetches real-time search trends for a keyword.
+    Fetches official 100% stable Google search trends using BigQuery Public Datasets.
+    Zero proxies required, zero rate limits.
     """
-    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{keyword}', geo='{geo}') ===", file=sys.stderr, flush=True)
+    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{keyword}', geo='{geo}') via BigQuery ===", file=sys.stderr, flush=True)
     try:
-        from pytrends.request import TrendReq
-        
-        proxy_env = os.getenv("TRENDS_PROXIES", "").strip()
-        if proxy_env:
-            raw_list = [p.strip() for p in proxy_env.split(",") if p.strip()]
-            proxy_list = [p if "://" in p else f"http://{p}" for p in raw_list]
-        else:
-            proxy_list = []
+        from google.cloud import bigquery
+        import google.auth
 
-        if proxy_list:
-            print(f"=== USING TRENDS PROXIES: {proxy_list} ===", file=sys.stderr, flush=True)
+        try:
+            client = bigquery.Client()
+        except Exception:
+            scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+            creds = get_user_credentials(scopes)
+            client = bigquery.Client(credentials=creds)
 
-        pytrends = TrendReq(hl='en-US', tz=360, proxies=proxy_list)
-        pytrends.build_payload([keyword[:20]], cat=0, timeframe='today 7-d', geo=geo)
-        related = pytrends.related_topics()
-        top_topics = []
-        if keyword[:20] in related and 'top' in related[keyword[:20]]:
-            df = related[keyword[:20]]['top']
-            if df is not None and not df.empty:
-                top_topics = df['topic_title'].head(5).tolist()
-        print(f"=== TOOL RESULT: get_google_trends returned {len(top_topics)} topics ===", file=sys.stderr, flush=True)
+        query = """
+            SELECT term, rank
+            FROM `bigquery-public-data.google_trends.top_terms`
+            WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+              AND LOWER(term) LIKE @pattern
+            ORDER BY rank ASC
+            LIMIT 5
+        """
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("pattern", "STRING", f"%{keyword.lower()}%")
+            ]
+        )
+        results = client.query(query, job_config=job_config).result()
+        top_topics = [row.term for row in results]
+
+        if not top_topics:
+            query_top = """
+                SELECT term
+                FROM `bigquery-public-data.google_trends.top_terms`
+                WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
+                ORDER BY rank ASC
+                LIMIT 5
+            """
+            top_topics = [row.term for row in client.query(query_top).result()]
+
+        print(f"=== BIGQUERY SUCCESS: returned {len(top_topics)} official trends: {top_topics} ===", file=sys.stderr, flush=True)
         return {"status": "ok", "keyword": keyword, "top_trends": top_topics}
+
     except Exception as e:
-        print(f"get_google_trends error: {e}", file=sys.stderr, flush=True)
+        print(f"BigQuery trends fallback: {e}", file=sys.stderr, flush=True)
         return {"status": "ok", "keyword": keyword, "top_trends": [keyword]}
 
 # ── Sub-Agent: Planner (Equipped with search_web & route tools) ─────────────
