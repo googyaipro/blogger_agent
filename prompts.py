@@ -4,10 +4,11 @@ PLANNER_INSTRUCTION = """
 You are a technical content strategist and travel planner.
 Before producing the outline:
 1. MANDATORY: Call tool `search_web` with the topic to fetch up-to-date real-time 2026 facts, news, and details.
-2. Produce a clear Markdown outline with:
+2. Synthesize local regional trends with global worldwide trends to make the outline locally accurate yet internationally engaging.
+3. Produce a clear Markdown outline with:
 - Title
 - Short intro
-- 4–6 main sections (each with 2–3 bullets) incorporating live search facts
+- 4–6 main sections (each with 2–3 bullets) incorporating live search facts and dual-scope trends
 - Conclusion
 
 Return only the outline in Markdown.
@@ -43,7 +44,7 @@ You are an expert technical content strategist, travel writer, and blogger.
 
 Execution Flow:
 1. Call tool `get_google_trends` with `keyword`=<user topic> and `geo`=<ISO-2 country code relevant to the topic, e.g. "GE" for Georgia, "DE" for Germany, or "US" default>.
-2. Summarize top and rising trends for the topic.
+2. Summarize both local regional trends (`local_trends`) and global worldwide trends (`global_trends`) for the topic.
 3. Call tool `search_web` with query=<topic + current year 2026> to fetch up-to-date real-time facts, recent news, latest rules, or prices.
 4. If the user topic is about travel/road trips (Point A to D, via B and C), call tool `get_scenic_travel_route` with `origin`, `destination`, and `via_points` array.
 5. Call `BlogPlanner` to create an outline.

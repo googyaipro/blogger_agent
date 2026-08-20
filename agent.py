@@ -259,16 +259,16 @@ def search_web(query: str = "", max_results: int = 5) -> dict:
         print(f"search_web error: {e}", file=sys.stderr, flush=True)
         return {"status": "error", "message": str(e)}
 
-# ── Official Google Trends via BigQuery Public Datasets ─────────────────────
-def get_google_trends(keyword: str = "travel", geo: str = "US") -> dict:
+# ── Official Google Trends via BigQuery Public Datasets (Dual-Scope) ────────
+def get_google_trends(keyword: str = "", geo: str = "US") -> dict:
     """
     Fetches official 100% stable Google search trends using BigQuery Public Datasets.
-    Zero proxies required, zero rate limits.
+    Synthesizes both local regional trends and global worldwide trends.
     """
-    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{keyword}', geo='{geo}') via BigQuery ===", file=sys.stderr, flush=True)
+    search_keyword = keyword.strip() if keyword else "technology"
+    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{search_keyword}', geo='{geo}') via BigQuery ===", file=sys.stderr, flush=True)
     try:
         from google.cloud import bigquery
-        import google.auth
 
         try:
             client = bigquery.Client()
@@ -277,7 +277,8 @@ def get_google_trends(keyword: str = "travel", geo: str = "US") -> dict:
             creds = get_user_credentials(scopes)
             client = bigquery.Client(credentials=creds)
 
-        query = """
+        # 1. Local Regional Trends
+        query_local = """
             SELECT term, rank
             FROM `bigquery-public-data.google_trends.top_terms`
             WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
@@ -287,28 +288,43 @@ def get_google_trends(keyword: str = "travel", geo: str = "US") -> dict:
         """
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter("pattern", "STRING", f"%{keyword.lower()}%")
+                bigquery.ScalarQueryParameter("pattern", "STRING", f"%{search_keyword.lower()}%")
             ]
         )
-        results = client.query(query, job_config=job_config).result()
-        top_topics = [row.term for row in results]
+        local_results = client.query(query_local, job_config=job_config).result()
+        local_topics = [row.term for row in local_results]
 
-        if not top_topics:
-            query_top = """
-                SELECT term
-                FROM `bigquery-public-data.google_trends.top_terms`
-                WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
-                ORDER BY rank ASC
-                LIMIT 5
-            """
-            top_topics = [row.term for row in client.query(query_top).result()]
+        # 2. Global Worldwide Trends
+        query_global = """
+            SELECT term
+            FROM `bigquery-public-data.google_trends.top_terms`
+            WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
+            ORDER BY rank ASC
+            LIMIT 5
+        """
+        global_topics = [row.term for row in client.query(query_global).result()]
 
-        print(f"=== BIGQUERY SUCCESS: returned {len(top_topics)} official trends: {top_topics} ===", file=sys.stderr, flush=True)
-        return {"status": "ok", "keyword": keyword, "top_trends": top_topics}
+        if not local_topics:
+            local_topics = global_topics[:3]
+
+        print(f"=== DUAL TRENDS SUCCESS: Local ({geo}): {local_topics} | Global: {global_topics} ===", file=sys.stderr, flush=True)
+        return {
+            "status": "ok",
+            "keyword": search_keyword,
+            "local_geo": geo or "US",
+            "local_trends": local_topics,
+            "global_trends": global_topics
+        }
 
     except Exception as e:
         print(f"BigQuery trends fallback: {e}", file=sys.stderr, flush=True)
-        return {"status": "ok", "keyword": keyword, "top_trends": [keyword]}
+        return {
+            "status": "ok",
+            "keyword": search_keyword,
+            "local_geo": geo or "US",
+            "local_trends": [search_keyword],
+            "global_trends": [search_keyword]
+        }
 
 # ── Sub-Agent: Planner (Equipped with search_web & route tools) ─────────────
 blog_planner = Agent(
