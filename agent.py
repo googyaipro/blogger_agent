@@ -39,7 +39,10 @@ def save_to_cloud_storage(title: str = "", content: str = "") -> dict:
         from google.cloud import storage
         import re
 
-        bucket_name = os.getenv("GCS_BUCKET_NAME", "blogger-articles-smitha-kolan")
+        bucket_name = os.getenv("GCS_BUCKET_NAME", "").strip()
+        if not bucket_name:
+            return {"status": "error", "message": "GCS_BUCKET_NAME environment variable is not configured."}
+
         client = storage.Client()
         bucket = client.bucket(bucket_name)
 
@@ -56,7 +59,7 @@ def save_to_cloud_storage(title: str = "", content: str = "") -> dict:
         file_url = f"https://storage.googleapis.com/{bucket_name}/{safe_filename}"
         return {"status": "ok", "file_name": safe_filename, "file_url": file_url}
     except Exception as e:
-        print(f"save_to_cloud_storage failed: {e}", file=sys.stderr)
+        print(f"save_to_cloud_storage failed: {e}", file=sys.stderr, flush=True)
         return {"status": "error", "message": str(e)}
 
 def get_user_credentials(scopes):
@@ -67,10 +70,7 @@ def get_user_credentials(scopes):
     refresh_token = os.getenv("OAUTH_REFRESH_TOKEN")
     client_id = os.getenv("OAUTH_CLIENT_ID")
     client_secret = os.getenv("OAUTH_CLIENT_SECRET")
-
     all_scopes = list(scopes) if scopes else []
-    if "https://www.googleapis.com/auth/cloud-platform" not in all_scopes:
-        all_scopes.append("https://www.googleapis.com/auth/cloud-platform")
 
     if refresh_token:
         from google.oauth2.credentials import Credentials
@@ -99,6 +99,8 @@ def send_article_email(subject: str = "", body: str = "") -> dict:
         from googleapiclient.discovery import build
 
         recipient = os.getenv("NOTIFICATION_EMAIL", "")
+        if not recipient:
+            return {"status": "error", "error_type": "ConfigurationError", "message": "NOTIFICATION_EMAIL is not set."}
 
         scopes = [
             "https://www.googleapis.com/auth/gmail.send",
@@ -132,10 +134,11 @@ def send_article_email(subject: str = "", body: str = "") -> dict:
             "attached_file": filename,
         }
     except Exception as e:
-        print(f"send_article_email via Gmail API error: {e}", file=sys.stderr)
+        print(f"send_article_email via Gmail API error: {e}", file=sys.stderr, flush=True)
         return {
-            "status": "ok",
-            "notice": f"Cloud Storage backup link created. Gmail status: {e}",
+            "status": "error",
+            "error_type": "GmailDeliveryError",
+            "message": str(e),
             "recipient": os.getenv("NOTIFICATION_EMAIL", ""),
         }
 
@@ -171,8 +174,15 @@ def save_to_google_drive(title: str = "", content: str = "") -> dict:
         doc_url = file.get("webViewLink") or f"https://docs.google.com/document/d/{doc_id}/edit"
         return {"status": "ok", "doc_id": doc_id, "doc_url": doc_url}
     except Exception as e:
-        print(f"save_to_google_drive error: {e}", file=sys.stderr)
-        return save_to_cloud_storage(title, content)
+        print(f"save_to_google_drive error: {e}", file=sys.stderr, flush=True)
+        fallback_res = save_to_cloud_storage(title, content)
+        return {
+            "status": "partial_success" if fallback_res.get("status") == "ok" else "error",
+            "doc_id": None,
+            "doc_url": fallback_res.get("file_url"),
+            "fallback_storage": "gcs",
+            "warning": f"Google Drive upload failed: {e}. Backed up to Cloud Storage.",
+        }
 
 # ── Scenic Multi-Point Travel Route Tool via Google Maps APIs ────────────────
 def get_scenic_travel_route(origin: str = "", destination: str = "", via_points: list = None, travel_style: str = "scenic") -> dict:
@@ -187,6 +197,7 @@ def get_scenic_travel_route(origin: str = "", destination: str = "", via_points:
 
     try:
         import requests
+        import urllib.parse
         
         via_list = via_points if isinstance(via_points, list) else ([via_points] if via_points else [])
         
@@ -199,10 +210,14 @@ def get_scenic_travel_route(origin: str = "", destination: str = "", via_points:
                 all_waypoints.append(str(vp))
                 waypoint_names.append(str(vp))
 
-        # Search scenic attractions along the trip
+        # Search scenic attractions along the trip safely using params dict
         search_query = f"scenic attractions between {origin} and {destination}"
-        places_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={search_query}&key={api_key}"
-        res = requests.get(places_url, timeout=10).json()
+        params = {
+            "query": search_query,
+            "key": api_key,
+        }
+        resp = requests.get("https://maps.googleapis.com/maps/api/place/textsearch/json", params=params, timeout=10)
+        res = resp.json() if resp.status_code == 200 else {}
         
         if res.get("results"):
             for item in res["results"][:2]:
@@ -212,8 +227,16 @@ def get_scenic_travel_route(origin: str = "", destination: str = "", via_points:
                 all_waypoints.append(f"{lat},{lng}")
                 waypoint_names.append(f"Scenic: {name}")
 
-        waypoint_str = "|".join(all_waypoints)
-        google_maps_url = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&waypoints={waypoint_str}&travelmode=driving"
+        query_params = {
+            "api": "1",
+            "origin": origin,
+            "destination": destination,
+            "travelmode": "driving",
+        }
+        if all_waypoints:
+            query_params["waypoints"] = "|".join(all_waypoints)
+
+        google_maps_url = f"https://www.google.com/maps/dir/?{urllib.parse.urlencode(query_params)}"
 
         return {
             "status": "ok",
@@ -266,7 +289,8 @@ def get_google_trends(keyword: str = "", geo: str = "US") -> dict:
     Synthesizes both local regional trends and global worldwide trends.
     """
     search_keyword = keyword.strip() if keyword else "technology"
-    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{search_keyword}', geo='{geo}') via BigQuery ===", file=sys.stderr, flush=True)
+    geo_code = (geo or "US").upper()
+    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{search_keyword}', geo='{geo_code}') via BigQuery ===", file=sys.stderr, flush=True)
     try:
         from google.cloud import bigquery
 
@@ -277,28 +301,46 @@ def get_google_trends(keyword: str = "", geo: str = "US") -> dict:
             creds = get_user_credentials(scopes)
             client = bigquery.Client(credentials=creds)
 
-        # 1. Local Regional Trends
+        # 1. Local Regional Trends (using international_top_terms with country_code filter)
         query_local = """
             SELECT term, rank
-            FROM `bigquery-public-data.google_trends.top_terms`
-            WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+            FROM `bigquery-public-data.google_trends.international_top_terms`
+            WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
+              AND country_code = @country_code
               AND LOWER(term) LIKE @pattern
             ORDER BY rank ASC
             LIMIT 5
         """
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter("pattern", "STRING", f"%{search_keyword.lower()}%")
+                bigquery.ScalarQueryParameter("pattern", "STRING", f"%{search_keyword.lower()}%"),
+                bigquery.ScalarQueryParameter("country_code", "STRING", geo_code),
             ]
         )
         local_results = client.query(query_local, job_config=job_config).result()
         local_topics = [row.term for row in local_results]
 
+        if not local_topics:
+            query_country_top = """
+                SELECT term
+                FROM `bigquery-public-data.google_trends.international_top_terms`
+                WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
+                  AND country_code = @country_code
+                ORDER BY rank ASC
+                LIMIT 5
+            """
+            country_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("country_code", "STRING", geo_code)
+                ]
+            )
+            local_topics = [row.term for row in client.query(query_country_top, job_config=country_config).result()]
+
         # 2. Global Worldwide Trends
         query_global = """
             SELECT term
-            FROM `bigquery-public-data.google_trends.top_terms`
-            WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY)
+            FROM `bigquery-public-data.google_trends.international_top_terms`
+            WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
             ORDER BY rank ASC
             LIMIT 5
         """
@@ -307,11 +349,11 @@ def get_google_trends(keyword: str = "", geo: str = "US") -> dict:
         if not local_topics:
             local_topics = global_topics[:3]
 
-        print(f"=== DUAL TRENDS SUCCESS: Local ({geo}): {local_topics} | Global: {global_topics} ===", file=sys.stderr, flush=True)
+        print(f"=== DUAL TRENDS SUCCESS: Local ({geo_code}): {local_topics} | Global: {global_topics} ===", file=sys.stderr, flush=True)
         return {
             "status": "ok",
             "keyword": search_keyword,
-            "local_geo": geo or "US",
+            "local_geo": geo_code,
             "local_trends": local_topics,
             "global_trends": global_topics
         }
@@ -321,7 +363,7 @@ def get_google_trends(keyword: str = "", geo: str = "US") -> dict:
         return {
             "status": "ok",
             "keyword": search_keyword,
-            "local_geo": geo or "US",
+            "local_geo": geo_code,
             "local_trends": [search_keyword],
             "global_trends": [search_keyword]
         }

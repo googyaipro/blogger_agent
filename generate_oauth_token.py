@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from dotenv import load_dotenv
 from google_auth_oauthlib.flow import InstalledAppFlow
 
@@ -17,8 +18,8 @@ SCOPES = [
 ]
 
 if CLIENT_ID == "your_client_id_here" or CLIENT_SECRET == "your_client_secret_here":
-    print("ERROR: Please specify OAUTH_CLIENT_ID and OAUTH_CLIENT_SECRET in your .env file!")
-    exit(1)
+    print("ERROR: Please specify OAUTH_CLIENT_ID and OAUTH_CLIENT_SECRET in your .env file!", file=sys.stderr)
+    sys.exit(1)
 
 client_config = {
     "installed": {
