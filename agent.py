@@ -282,15 +282,19 @@ def search_web(query: str = "", max_results: int = 5) -> dict:
         print(f"search_web error: {e}", file=sys.stderr, flush=True)
         return {"status": "error", "message": str(e)}
 
-# ── Official Google Trends via BigQuery Public Datasets (Dual-Scope) ────────
-def get_google_trends(keyword: str = "", geo: str = "US") -> dict:
+# ── Official Google Trends via BigQuery Public Datasets (Smart-Scope) ───────
+def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -> dict:
     """
     Fetches official 100% stable Google search trends using BigQuery Public Datasets.
-    Synthesizes both local regional trends and global worldwide trends.
+    Supports smart scope selection:
+    - 'local': Fetches only regional country-specific trends (ideal for local/niche/cultural topics like 'Georgian wines', 'Bavarian castles').
+    - 'global': Fetches only worldwide trends (ideal for universal tech/science topics like 'AI agents', 'Quantum computing').
+    - 'both' / 'auto': Fetches and synthesizes both local and worldwide trends (ideal for hybrid/export topics).
     """
     search_keyword = keyword.strip() if keyword else "technology"
     geo_code = (geo or "US").upper()
-    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{search_keyword}', geo='{geo_code}') via BigQuery ===", file=sys.stderr, flush=True)
+    target_scope = (scope or "auto").lower()
+    print(f"=== TOOL EXECUTED: get_google_trends(keyword='{search_keyword}', geo='{geo_code}', scope='{target_scope}') via BigQuery ===", file=sys.stderr, flush=True)
     try:
         from google.cloud import bigquery
 
@@ -301,58 +305,64 @@ def get_google_trends(keyword: str = "", geo: str = "US") -> dict:
             creds = get_user_credentials(scopes)
             client = bigquery.Client(credentials=creds)
 
-        # 1. Local Regional Trends (using international_top_terms with country_code filter)
-        query_local = """
-            SELECT term, rank
-            FROM `bigquery-public-data.google_trends.international_top_terms`
-            WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
-              AND country_code = @country_code
-              AND LOWER(term) LIKE @pattern
-            ORDER BY rank ASC
-            LIMIT 5
-        """
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("pattern", "STRING", f"%{search_keyword.lower()}%"),
-                bigquery.ScalarQueryParameter("country_code", "STRING", geo_code),
-            ]
-        )
-        local_results = client.query(query_local, job_config=job_config).result()
-        local_topics = [row.term for row in local_results]
+        local_topics = []
+        global_topics = []
 
-        if not local_topics:
-            query_country_top = """
-                SELECT term
+        # 1. Local Regional Trends (using international_top_terms with country_code filter)
+        if target_scope in ("local", "both", "auto"):
+            query_local = """
+                SELECT term, rank
                 FROM `bigquery-public-data.google_trends.international_top_terms`
                 WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
                   AND country_code = @country_code
+                  AND LOWER(term) LIKE @pattern
                 ORDER BY rank ASC
                 LIMIT 5
             """
-            country_config = bigquery.QueryJobConfig(
+            job_config = bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("country_code", "STRING", geo_code)
+                    bigquery.ScalarQueryParameter("pattern", "STRING", f"%{search_keyword.lower()}%"),
+                    bigquery.ScalarQueryParameter("country_code", "STRING", geo_code),
                 ]
             )
-            local_topics = [row.term for row in client.query(query_country_top, job_config=country_config).result()]
+            local_results = client.query(query_local, job_config=job_config).result()
+            local_topics = [row.term for row in local_results]
+
+            if not local_topics:
+                query_country_top = """
+                    SELECT term
+                    FROM `bigquery-public-data.google_trends.international_top_terms`
+                    WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
+                      AND country_code = @country_code
+                    ORDER BY rank ASC
+                    LIMIT 5
+                """
+                country_config = bigquery.QueryJobConfig(
+                    query_parameters=[
+                        bigquery.ScalarQueryParameter("country_code", "STRING", geo_code)
+                    ]
+                )
+                local_topics = [row.term for row in client.query(query_country_top, job_config=country_config).result()]
 
         # 2. Global Worldwide Trends
-        query_global = """
-            SELECT term
-            FROM `bigquery-public-data.google_trends.international_top_terms`
-            WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
-            ORDER BY rank ASC
-            LIMIT 5
-        """
-        global_topics = [row.term for row in client.query(query_global).result()]
+        if target_scope in ("global", "both", "auto"):
+            query_global = """
+                SELECT term
+                FROM `bigquery-public-data.google_trends.international_top_terms`
+                WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+                ORDER BY rank ASC
+                LIMIT 5
+            """
+            global_topics = [row.term for row in client.query(query_global).result()]
 
-        if not local_topics:
+        if target_scope in ("both", "auto") and not local_topics:
             local_topics = global_topics[:3]
 
-        print(f"=== DUAL TRENDS SUCCESS: Local ({geo_code}): {local_topics} | Global: {global_topics} ===", file=sys.stderr, flush=True)
+        print(f"=== TRENDS SUCCESS (scope={target_scope}): Local ({geo_code}): {local_topics} | Global: {global_topics} ===", file=sys.stderr, flush=True)
         return {
             "status": "ok",
             "keyword": search_keyword,
+            "scope": target_scope,
             "local_geo": geo_code,
             "local_trends": local_topics,
             "global_trends": global_topics
@@ -363,9 +373,10 @@ def get_google_trends(keyword: str = "", geo: str = "US") -> dict:
         return {
             "status": "ok",
             "keyword": search_keyword,
+            "scope": target_scope,
             "local_geo": geo_code,
-            "local_trends": [search_keyword],
-            "global_trends": [search_keyword]
+            "local_trends": [search_keyword] if target_scope != "global" else [],
+            "global_trends": [search_keyword] if target_scope != "local" else []
         }
 
 # ── Sub-Agent: Planner (Equipped with search_web & route tools) ─────────────
