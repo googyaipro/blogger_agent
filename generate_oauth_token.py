@@ -31,7 +31,7 @@ client_config = {
 }
 
 flow = InstalledAppFlow.from_client_config(client_config, scopes=SCOPES)
-creds = flow.run_local_server(port=0, prompt="consent")
+creds = flow.run_local_server(port=0, prompt="consent", access_type="offline")
 
 print("\n" + "="*50)
 print("SUCCESS! YOUR OAUTH REFRESH TOKEN IS:")
