@@ -1,22 +1,21 @@
 # 🚀 Blogger Agent MCP & AI Universal Content Generation Engine
 
-**Blogger Agent MCP** — это автономная мультиагентная система на базе **Google Agent Development Kit (ADK)** и **Gemini 3.5 Flash**, предназначенная для глубокого аналитического исследования трендов через **Google BigQuery**, живого поиска актуальных фактов в вебе, автоматического построения многоточечных маршрутов в **Google Maps**, написания экспертных лонгридов по любым профильным и междисциплинарным темам, публикации документов в **Google Docs** и рассылки по **Gmail**.
+**Blogger Agent MCP** — это автономная мультиагентная система на базе **Google Agent Development Kit (ADK)** и флагманской модели **Gemini 3.8 Flash** (Vertex AI Global Endpoint), предназначенная для глубокого аналитического исследования трендов через **Google BigQuery**, живого поиска актуальных фактов в вебе, автоматического построения многоточечных маршрутов в **Google Maps**, написания экспертных лонгридов по любым профильным и междисциплинарным темам, публикации документов в **Google Docs** и рассылки по **Gmail**.
 
 ---
 
 ## 🌟 Ключевые возможности
 
-* 🧠 **Мультиагентный универсальный пайплайн (Google ADK & Gemini 3.5 Flash):** Использование профильных субагентов `BlogPlanner` *(Senior Content Strategist & Structural Editor)* и `BlogWriter` под управлением оркестратора `Root Agent`.
-* 🔬 **Универсальность и междисциплинарная адаптация:** Идеальное проектирование и написание статей по **любым доменам**:
-  * 💻 **IT & Cloud Engineering** *(Kubernetes, Python, GCP Architecture)*
-  * 🩺 **Медицина & Косметология** *(Эстетическая дерматология, аппаратные процедуры)*
-  * 🚗 **Автопутешествия & Туризм** *(Маршруты A ➔ B ➔ C ➔ D с Google Maps)*
-  * 📊 **Бизнес & Аналитика** *(Анализ мировых рынков и трендов)*
-* 📊 **Официальный BigQuery Engine (Dual-Scope Trend Synthesis):** Замена неофициального парсинга на **прямые SQL-запросы к датасету `bigquery-public-data.google_trends`**. Одновременный синтез **локальных региональных трендов** и **общемирового контекста (Worldwide Global Trends)** без прокси и без ошибок 400!
-* 🌐 **Живой веб-поиск в реальном времени (`search_web`):** Заземление фактов (Grounding) на текущую дату для гарантированной актуальности данных 2026 года.
-* 🗺 **Гранд-Тур маршрутизатор (`get_scenic_travel_route`):** Построение сложных автопутешествий **Точка А ➔ Б ➔ В ➔ Г** с генерацией кликабельных интерактивных карт в Google Maps.
-* 🔒 **Делегированная OAuth 2.0 авторизация:** Создание файлов прямо на **вашем личном Google Диске** (Google Docs API) и отправка сообщений от **вашего личного Gmail** (Gmail API).
-* ☁️ **Cloud Native & Docker Ready:** Готов к моментальному развертыванию в **Google Cloud Run**, **Docker** и **Dokploy**.
+* 🧠 **Мультиагентный универсальный пайплайн (Google ADK & Gemini 3.8 Flash):** Использование профильных субагентов `BlogPlanner` *(Senior Content Strategist & Structural Editor)* и `BlogWriter` под управлением оркестратора `Root Agent`. Подключение к Vertex AI через глобальный динамический балансировщик (`GOOGLE_CLOUD_LOCATION="global"`).
+* 🎯 **Умный селектор масштаба темы (Smart Topic Scope):**
+  * 📍 **`scope="local"` (Гиперлокальный):** Для региональной традиционной продукции, локальных ремесел, кулинарии и путеводителей. Запрашиваются только тренды выбранной страны (`geo`), а мировой инфошум полностью отсекается (`global_trends = []`).
+  * 🌍 **`scope="global"` (Мировой):** Для глобальных тем (AI, квантовые вычисления, облачные архитектуры).
+  * 🌐 **`scope="both"` (Гибридный):** Для вопросов экспорта, международной торговли и транзитного туризма.
+* 📊 **Официальный BigQuery Engine (Dual-Scope Trend Synthesis):** Замена неофициального парсинга на **прямые SQL-запросы к датасету `bigquery-public-data.google_trends.international_top_terms`**. Точная фильтрация по ISO-кодам стран без прокси и без блокировок 429/403!
+* 🌐 **Живой веб-поиск в реальном времени (`search_web`):** Заземление фактов (Grounding) на текущую дату для гарантированной актуальности цен, законов и правил 2026 года.
+* 🗺 **Гранд-Тур маршрутизатор (`get_scenic_travel_route`):** Построение сложных автопутешествий **Точка А ➔ Б ➔ В ➔ Г** через Google Places & Routes API с безопасным экранированием кириллицы (`urllib.parse.urlencode`) и генерацией интерактивных карт.
+* 🔒 **Бессрочная OAuth 2.0 авторизация & Fallback Storage:** Режим **In production** с параметром `access_type="offline"` гарантирует вечную жизнь токенов. При любых временных сбоях Google Drive статья автоматически сохраняется в **Google Cloud Storage (GCS)** (нулевой риск потери контента).
+* 🐳 **Облегченный Docker-образ:** Удален лишний стек Node.js/npm, контейнер уменьшен на **~350 МБ** (чистый Python 3.11-slim, быстрая сборка).
 
 ---
 
@@ -28,21 +27,25 @@
         ▼
 [Root Agent (Blogger Orchestrator)]
         │
-        ├──> 1. Official BigQuery Trends Engine (get_google_trends)
-        │        ├──> Local Regional Trends (например, geo="GE", "DE", "US")
-        │        └──> Worldwide Global Trends (Planet-wide)
+        ├──> 1. Smart Topic Scope Selector (prompts.py)
+        │        ├──> scope="local"  -> Только региональные тренды выбранной страны
+        │        ├──> scope="global" -> Только мировые глобальные тренды
+        │        └──> scope="both"   -> Синтез локальных и мировых трендов
         │
-        ├──> 2. Live Web Search (search_web / DDGS 2026 Grounding)
+        ├──> 2. Official BigQuery Trends Engine (get_google_trends)
+        │        └──> `bigquery-public-data.google_trends.international_top_terms`
         │
-        ├──> 3. Scenic Route Planner (get_scenic_travel_route / Places & Routes API)
+        ├──> 3. Live Web Search (search_web / DDGS 2026 Grounding)
         │
-        ├──> 4. Outline Generation (Sub-Agent: BlogPlanner - Senior Content Strategist)
+        ├──> 4. Scenic Route Planner (get_scenic_travel_route / Places & Routes API)
         │
-        ├──> 5. Full Article Generation (Sub-Agent: BlogWriter - Master Writer)
+        ├──> 5. Outline Generation (Sub-Agent: BlogPlanner - Senior Content Strategist)
         │
-        └──> 6. Export & Delivery
+        ├──> 6. Full Article Generation (Sub-Agent: BlogWriter - Master Writer)
+        │
+        └──> 7. Export & Delivery
                  ├── Google Drive / Docs API (save_to_google_drive)
-                 ├── Google Cloud Storage Backup (save_to_cloud_storage)
+                 ├── 🛡 Fallback: Google Cloud Storage (save_to_cloud_storage)
                  └── Gmail API Dispatch (send_article_email)
 ```
 
@@ -54,7 +57,7 @@
 
 ```env
 # Модель и регион Google Cloud Vertex AI
-MODEL=gemini-3.5-flash
+MODEL=gemini-3.8-flash
 GOOGLE_CLOUD_LOCATION=global
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 
@@ -79,7 +82,7 @@ NOTIFICATION_EMAIL=your_email@gmail.com
 
 ### 1. Клонирование репозитория и создание venv
 ```bash
-git clone -b bigquery https://github.com/your-username/blogger_agent.git
+git clone -b bigquery https://github.com/googyaipro/blogger_agent.git
 cd blogger_agent
 
 python3 -m venv .venv
@@ -92,11 +95,11 @@ pip install -r requirements.txt
 ```
 
 ### 3. Авторизация OAuth 2.0 (Однократный запуск)
-Для получения своего долговечного `OAUTH_REFRESH_TOKEN` запустите скрипт авторизации:
+Для получения своего бессрочного `OAUTH_REFRESH_TOKEN` запустите скрипт авторизации:
 ```bash
 python generate_oauth_token.py
 ```
-Авторизуйтесь в открывшемся браузере под своим Google-аккаунтом и скопируйте полученный `refresh_token` в `.env`.
+Авторизуйтесь в открывшемся браузере под своим Google-аккаунтом и скопируйте полученный `refresh_token` в `.env` и в Google Cloud Secret Manager.
 
 ### 4. Локальный запуск агента
 ```bash
@@ -105,32 +108,9 @@ python agent.py
 
 ---
 
-## 🐳 Развертывание в Docker / Dokploy / Cloud Run
+## 🐳 Развертывание в Docker / Cloud Run / Dokploy
 
-### 1. Запуск через Docker Compose
-Создайте `docker-compose.yml`:
-```yaml
-version: '3.8'
-
-services:
-  blogger-agent:
-    build: .
-    container_name: blogger_agent
-    restart: always
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env
-```
-
-Запустите контейнер:
-```bash
-docker compose up -d
-```
-
----
-
-### 2. Деплой в Google Cloud Run
+### 1. Деплой в Google Cloud Run (Рекомендуемый способ)
 ```bash
 gcloud run deploy bloggeragentmcpv03 \
   --source . \
@@ -138,17 +118,32 @@ gcloud run deploy bloggeragentmcpv03 \
   --allow-unauthenticated \
   --service-account="blogger-sa@your-gcp-project.iam.gserviceaccount.com" \
   --set-secrets="OAUTH_REFRESH_TOKEN=oauth-refresh-token:latest" \
-  --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=TRUE,MODEL="gemini-3.5-flash",GOOGLE_CLOUD_LOCATION="global",GCS_BUCKET_NAME="your-gcs-bucket-name",NOTIFICATION_EMAIL="your_email@gmail.com",GOOGLE_MAPS_API_KEY="AIzaSyYourGoogleMapsApiKeyHere12345"
+  --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=TRUE,MODEL="gemini-3.8-flash",GOOGLE_CLOUD_LOCATION="global",GCS_BUCKET_NAME="your-gcs-bucket-name",NOTIFICATION_EMAIL="your_email@gmail.com",GOOGLE_MAPS_API_KEY="AIzaSyYourGoogleMapsApiKeyHere12345"
 ```
 
 ---
 
-### 3. Деплой в Dokploy
+### 2. Запуск через Docker Compose
+```bash
+docker compose up -d
+```
+
+---
+
+### 3. Деплой в Dokploy (VPS)
 1. Создайте **Application** в панели Dokploy.
 2. В **Build Type** выберите `Dockerfile`.
 3. Заполните переменные во вкладке **Environment**.
 4. Загрузите файл сервисного аккаунта `/app/gcp-key.json` во вкладку **File Mounts** для Vertex AI & BigQuery.
 5. Нажмите **Deploy**.
+
+---
+
+## 📚 Дополнительная документация проекта
+
+* 📑 [**Итоговая ретроспектива проекта**](PROJECT_RETROSPECTIVE.md) — детальный разбор проблем, решений и результатов.
+* 🛠 [**Шпаргалка по командам gcloud**](gcloud_cheatsheet.md) — справочник команд для управления инфраструктурой, Secret Manager и Cloud Run.
+* 📊 [**Интерактивный Pitch Deck**](blogger_agent_pitch_deck.html) — презентационный мокап для печати в PDF.
 
 ---
 
