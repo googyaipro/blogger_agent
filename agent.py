@@ -27,7 +27,7 @@ except ImportError:
 # ── env/config ───────────────────────────────────────────────────────────────
 load_dotenv()
 
-MODEL = os.getenv("MODEL", "gemini-3.5-flash")
+MODEL = os.getenv("MODEL", "gemini-3.8-flash")
 
 # ── Google Cloud Storage Tool ─────────────────────────────────────────────────
 def save_to_cloud_storage(title: str = "", content: str = "") -> dict:
