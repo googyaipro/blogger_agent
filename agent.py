@@ -311,12 +311,13 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
         # 1. Local Regional Trends (using international_top_terms with country_code filter)
         if target_scope in ("local", "both", "auto"):
             query_local = """
-                SELECT term, rank
+                SELECT term, MIN(rank) as best_rank, MAX(refresh_date) as latest_date
                 FROM `bigquery-public-data.google_trends.international_top_terms`
                 WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
                   AND country_code = @country_code
                   AND LOWER(term) LIKE @pattern
-                ORDER BY rank ASC
+                GROUP BY term
+                ORDER BY best_rank ASC, latest_date DESC
                 LIMIT 5
             """
             job_config = bigquery.QueryJobConfig(
@@ -330,11 +331,12 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
 
             if not local_topics:
                 query_country_top = """
-                    SELECT term
+                    SELECT term, MIN(rank) as best_rank, MAX(refresh_date) as latest_date
                     FROM `bigquery-public-data.google_trends.international_top_terms`
                     WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
                       AND country_code = @country_code
-                    ORDER BY rank ASC
+                    GROUP BY term
+                    ORDER BY best_rank ASC, latest_date DESC
                     LIMIT 5
                 """
                 country_config = bigquery.QueryJobConfig(
@@ -347,10 +349,11 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
         # 2. Global Worldwide Trends
         if target_scope in ("global", "both", "auto"):
             query_global = """
-                SELECT term
+                SELECT term, MIN(rank) as best_rank, MAX(refresh_date) as latest_date
                 FROM `bigquery-public-data.google_trends.international_top_terms`
                 WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
-                ORDER BY rank ASC
+                GROUP BY term
+                ORDER BY best_rank ASC, latest_date DESC
                 LIMIT 5
             """
             global_topics = [row.term for row in client.query(query_global).result()]
