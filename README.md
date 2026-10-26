@@ -14,6 +14,7 @@
 * 📊 **Официальный BigQuery Engine (Dual-Scope Trend Synthesis):** Замена неофициального парсинга на **прямые SQL-запросы к датасету `bigquery-public-data.google_trends.international_top_terms`**. Точная фильтрация по ISO-кодам стран без прокси и без блокировок 429/403!
 * 🛑 **Fail-Fast Quality Gate (Защита от сжигания токенов):** Никаких фейковых «заглушек». Если BigQuery недоступен, пайплайн моментально останавливается на шаге 1 с выводом точной ошибки, предотвращая напрасный расход тысяч токенов LLM на некачественные статьи.
 * 🌐 **Живой веб-поиск в реальном времени (`search_web`):** Заземление фактов (Grounding) на текущую дату для гарантированной актуальности цен, законов и правил 2026 года.
+* 📖 **Глубокий анализ первоисточников (`read_web_page`):** Чтение полных текстов статей и официальных документов через движок `trafilatura` с очисткой от рекламы. Агент извлекает точные факты, спецификации, цены и цитаты из найденных первоисточников.
 * 🗺 **Гранд-Тур маршрутизатор (`get_scenic_travel_route`):** Построение сложных автопутешествий **Точка А ➔ Б ➔ В ➔ Г** через Google Places & Routes API с безопасным экранированием кириллицы (`urllib.parse.urlencode`) и генерацией интерактивных карт.
 * 🔒 **Бессрочная OAuth 2.0 авторизация & Fallback Storage:** Режим **In production** с параметром `access_type="offline"` гарантирует вечную жизнь токенов. При любых временных сбоях Google Drive статья автоматически сохраняется в **Google Cloud Storage (GCS)** (нулевой риск потери контента).
 * 🐳 **Облегченный Docker-образ:** Удален лишний стек Node.js/npm, контейнер уменьшен на **~350 МБ** (чистый Python 3.11-slim, быстрая сборка).
@@ -36,7 +37,9 @@
         ├──> 2. Official BigQuery Trends Engine (get_google_trends)
         │        └──> `bigquery-public-data.google_trends.international_top_terms`
         │
-        ├──> 3. Live Web Search (search_web / DDGS 2026 Grounding)
+        ├──> 3. Live Web Search & Deep Reader
+        │        ├──> search_web (DDGS 2026 Grounding & Multilingual queries)
+        │        └──> read_web_page (Trafilatura Full-Text Reader)
         │
         ├──> 4. Scenic Route Planner (get_scenic_travel_route / Places & Routes API)
         │

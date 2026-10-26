@@ -9,13 +9,15 @@ Scope & Context Guidelines:
 - Global / Universal Topics (e.g. AI architecture, cybersecurity, quantum computing, global scientific breakthroughs): Focus on worldwide trends and global industry standards.
 - Hybrid / Cross-Domain Topics (e.g. regional product export markets, international travel routes, cross-border business): Bridge local regional specifics with global market trends.
 
-Before producing the outline:
-1. MANDATORY: Call tool `search_web` with the topic to fetch up-to-date real-time 2026 facts, news, and details.
-2. Incorporate the relevant trends context (local and/or global depending on the topic's scope).
-3. Produce a clear Markdown outline with:
+Deep Fact Retrieval Strategy:
+1. Call tool `search_web` with the topic to fetch up-to-date real-time 2026 facts, news, and details.
+   - For regional/cultural topics, formulate targeted queries both in English and in the native language of the region (e.g. Spanish for Spain, Italian for Italy, German for Germany) to discover authentic local sources.
+2. Call tool `read_web_page` on the top 1–2 most authoritative URLs returned by `search_web` to inspect full article text, extracting specific facts, statistics, prices, vintage years, or technical specs.
+3. Incorporate the relevant trends context (local and/or global depending on the topic's scope).
+4. Produce a clear Markdown outline with:
 - Title
 - Short intro
-- 4–6 main sections (each with 2–3 bullets) incorporating live search facts and relevant trends
+- 4–6 main sections (each with 2–3 bullets) incorporating live search facts, deep web excerpts, and relevant trends
 - Conclusion
 
 Return only the outline in Markdown.
@@ -31,9 +33,9 @@ Write a complete Markdown article from the outline in `blog_outline`.
 
 Guidelines:
 - Audience: domain professionals & curious readers; skip basics and focus on practical, authoritative insight.
-- MANDATORY: If current facts, regulations, rules, or prices are needed, call tool `search_web` to verify live 2026 information.
+- DEEP FACTUAL ACCURACY: If specific data, regulations, prices, or technical details are needed, call `search_web` and inspect full sources via `read_web_page`.
 - Context Matching:
-  - For hyper-local/regional topics (e.g. regional traditional products, cultural heritage, local travel): Maintain authentic local terminology, provenance details, and cultural depth without distracting global trivia.
+  - For hyper-local/regional topics (e.g. regional traditional products, cultural heritage, local travel): Maintain authentic local terminology, provenance details, terroir specifics, and cultural depth without distracting global trivia.
   - For global/technical topics: Provide high-level industry perspective, rigorous standards, and best practices.
 - Explain both the 'how' and 'why'.
 - FORMATTING RULE: NEVER output raw JSON blocks or code snippets for route summaries, trip metrics, or general specifications. ALWAYS format route summaries, key specs, and trip metrics as human-readable Markdown Callout blocks (using blockquotes with clear emojis like 📍, 📏, ⏱, 🗓, 🛣).

@@ -282,6 +282,51 @@ def search_web(query: str = "", max_results: int = 5) -> dict:
         print(f"search_web error: {e}", file=sys.stderr, flush=True)
         return {"status": "error", "message": str(e)}
 
+# ── Full-Text Web Page Reader Tool (Trafilatura Deep Extraction) ─────────────
+def read_web_page(url: str = "") -> dict:
+    """
+    Fetches and extracts clean, full-text Markdown content of a specific web page or article.
+    Use this tool after search_web to deeply inspect the top 1-2 URLs for authoritative facts,
+    specific prices, vintage years, domain terminology, and detailed statistics without boilerplate/ads.
+    """
+    clean_url = url.strip() if url else ""
+    print(f"=== TOOL EXECUTED: read_web_page(url='{clean_url}') ===", file=sys.stderr, flush=True)
+    if not clean_url or not clean_url.startswith("http"):
+        return {"status": "error", "message": "A valid HTTP/HTTPS URL is required."}
+
+    try:
+        import trafilatura
+        downloaded = trafilatura.fetch_url(clean_url)
+        if not downloaded:
+            return {"status": "error", "message": f"Could not download content from {clean_url}"}
+
+        extracted_text = trafilatura.extract(
+            downloaded,
+            output_format="markdown",
+            include_links=False,
+            include_images=False,
+        )
+
+        if not extracted_text:
+            return {"status": "error", "message": f"Could not extract article body from {clean_url}"}
+
+        # Keep up to 6000 chars to supply deep factual depth without overloading context window
+        max_chars = 6000
+        truncated = len(extracted_text) > max_chars
+        content = extracted_text[:max_chars] if truncated else extracted_text
+
+        print(f"=== TOOL RESULT: read_web_page extracted {len(content)} chars (truncated={truncated}) ===", file=sys.stderr, flush=True)
+        return {
+            "status": "ok",
+            "url": clean_url,
+            "characters_count": len(content),
+            "is_truncated": truncated,
+            "content": content
+        }
+    except Exception as e:
+        print(f"read_web_page error: {e}", file=sys.stderr, flush=True)
+        return {"status": "error", "message": str(e)}
+
 # ── Official Google Trends via BigQuery Public Datasets (Smart-Scope) ───────
 def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -> dict:
     """
@@ -385,23 +430,23 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
             "global_trends": []
         }
 
-# ── Sub-Agent: Planner (Equipped with search_web & route tools) ─────────────
+# ── Sub-Agent: Planner (Equipped with search_web, read_web_page & route tools) ─
 blog_planner = Agent(
    name="BlogPlanner",
    model=MODEL,
-   description="Creates a practical, skimmable outline in Markdown using search_web and trends.",
+   description="Creates a practical, skimmable outline in Markdown using search_web, read_web_page and trends.",
    instruction=PLANNER_INSTRUCTION,
-   tools=[search_web, get_scenic_travel_route, get_google_trends],
+   tools=[search_web, read_web_page, get_scenic_travel_route, get_google_trends],
    output_key="blog_outline",
 )
 
-# ── Sub-Agent: Writer (Equipped with search_web & route tools) ────────────────
+# ── Sub-Agent: Writer (Equipped with search_web, read_web_page & route tools) ──
 blog_writer = Agent(
    name="BlogWriter",
    model=MODEL,
-   description="Writes a technical blog post from the outline using search_web and travel route tools.",
+   description="Writes a technical blog post from the outline using search_web, read_web_page and travel route tools.",
    instruction=WRITER_INSTRUCTION,
-   tools=[search_web, get_scenic_travel_route],
+   tools=[search_web, read_web_page, get_scenic_travel_route],
    output_key="blog_post",
 )
 
@@ -410,13 +455,13 @@ planner_tool = agent_tool.AgentTool(agent=blog_planner)
 writer_tool  = agent_tool.AgentTool(agent=blog_writer)
 
 # Expose pure python tools list (AFC fully enabled!)
-tools_list = [get_google_trends, search_web, planner_tool, writer_tool, save_to_cloud_storage, save_to_google_drive, send_article_email, get_scenic_travel_route]
+tools_list = [get_google_trends, search_web, read_web_page, planner_tool, writer_tool, save_to_cloud_storage, save_to_google_drive, send_article_email, get_scenic_travel_route]
 
 # ── Root Agent: Trends → Search → Plan → Write → Export ──────────────────────
 root_agent = Agent(
    name="Blogger",
    model=MODEL,
-   description="Multi-agent blogger supporting Google Trends, Live Web Search, Google Maps, Cloud Storage export, Planning and Writing.",
+   description="Multi-agent blogger supporting Google Trends, Live Web Search, Deep Web Reader, Google Maps, Cloud Storage export, Planning and Writing.",
    instruction=get_blogger_instruction,
    tools=tools_list,
 )
