@@ -369,14 +369,17 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
         }
 
     except Exception as e:
-        print(f"BigQuery trends fallback: {e}", file=sys.stderr, flush=True)
+        error_msg = f"CRITICAL: BigQuery Trends engine failed: {e}. Pipeline aborted to prevent token waste."
+        print(f"=== {error_msg} ===", file=sys.stderr, flush=True)
         return {
-            "status": "ok",
+            "status": "fatal_error",
+            "error": str(e),
+            "message": error_msg,
             "keyword": search_keyword,
             "scope": target_scope,
             "local_geo": geo_code,
-            "local_trends": [search_keyword] if target_scope != "global" else [],
-            "global_trends": [search_keyword] if target_scope != "local" else []
+            "local_trends": [],
+            "global_trends": []
         }
 
 # ── Sub-Agent: Planner (Equipped with search_web & route tools) ─────────────

@@ -57,15 +57,19 @@ Execution Flow:
    - If hyper-local / regional (e.g. regional traditional products, local crafts, city/region guides), call `get_google_trends` with `keyword`=<topic>, `geo`=<ISO-2 country code, e.g. "GE", "DE", "IT">, and `scope`="local".
    - If global / universal (e.g. AI agents, quantum computing, cloud infrastructure), call `get_google_trends` with `keyword`=<topic>, `geo`="US", and `scope`="global".
    - If hybrid / cross-border (e.g. regional product export, international trade, cross-border tourism), call `get_google_trends` with `keyword`=<topic>, `geo`=<country code>, and `scope`="both".
-2. Summarize the relevant trends (local and/or global) for the topic.
-3. Call tool `search_web` with query=<topic + current year 2026> to fetch up-to-date real-time facts, recent news, latest rules, regulations, or prices.
-4. If the user topic is about travel/road trips (Point A to D, via B and C), call tool `get_scenic_travel_route` with `origin`, `destination`, and `via_points` array.
-5. Call `BlogPlanner` to create an outline (handling local, global, or interdisciplinary topics seamlessly).
-6. Call `BlogWriter` to generate the full article incorporating live web search results and route maps.
-7. Call tool `save_to_cloud_storage` with parameters `title` and `content`.
-8. Call tool `save_to_google_drive` with parameters `title` and `content`.
-9. Call tool `send_article_email` with parameters `subject` and `body`.
-10. Return the final article, 3 alternate titles, 2 tweet hooks, multi-point scenic travel map links (if applicable), and the Google Doc / Storage URLs.
+2. FAIL-FAST QUALITY GATE:
+   - If `get_google_trends` returns status "fatal_error" or fails, you MUST IMMEDIATELY STOP the execution.
+   - Do NOT call `search_web`, do NOT call `BlogPlanner`, and do NOT call `BlogWriter`.
+   - Output a clear critical error message explaining that BigQuery Trends data is unavailable, display the exact error message, and terminate to prevent wasting tokens.
+3. Summarize the relevant trends (local and/or global) for the topic.
+4. Call tool `search_web` with query=<topic + current year 2026> to fetch up-to-date real-time facts, recent news, latest rules, regulations, or prices.
+5. If the user topic is about travel/road trips (Point A to D, via B and C), call tool `get_scenic_travel_route` with `origin`, `destination`, and `via_points` array.
+6. Call `BlogPlanner` to create an outline (handling local, global, or interdisciplinary topics seamlessly).
+7. Call `BlogWriter` to generate the full article incorporating live web search results and route maps.
+8. Call tool `save_to_cloud_storage` with parameters `title` and `content`.
+9. Call tool `save_to_google_drive` with parameters `title` and `content`.
+10. Call tool `send_article_email` with parameters `subject` and `body`.
+11. Return the final article, 3 alternate titles, 2 tweet hooks, multi-point scenic travel map links (if applicable), and the Google Doc / Storage URLs.
 
 CRITICAL FUNCTION CALL RULE: You MUST invoke tools using direct native JSON function calls. NEVER wrap tool calls in python code, print() statements, or script blocks.
 
