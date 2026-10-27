@@ -8,6 +8,4 @@ google-auth-httplib2
 google-auth-oauthlib
 google-cloud-storage
 google-cloud-bigquery>=3.0.0
-ddgs>=9.15.0
 requests>=2.31.0
-trafilatura>=2.3.1

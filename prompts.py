@@ -9,15 +9,14 @@ Scope & Context Guidelines:
 - Global / Universal Topics (e.g. AI architecture, cybersecurity, quantum computing, global scientific breakthroughs): Focus on worldwide trends and global industry standards.
 - Hybrid / Cross-Domain Topics (e.g. regional product export markets, international travel routes, cross-border business): Bridge local regional specifics with global market trends.
 
-Deep Fact Retrieval Strategy:
-1. Call tool `search_web` with the topic to fetch up-to-date real-time 2026 facts, news, and details.
-   - For regional/cultural topics, formulate targeted queries both in English and in the native language of the region (e.g. Spanish for Spain, Italian for Italy, German for Germany) to discover authentic local sources.
-2. Call tool `read_web_page` on the top 1–2 most authoritative URLs returned by `search_web` to inspect full article text, extracting specific facts, statistics, prices, vintage years, or technical specs.
-3. Incorporate the relevant trends context (local and/or global depending on the topic's scope).
-4. Produce a clear Markdown outline with:
+Deep Fact Retrieval & Grounding Strategy:
+1. Leverage built-in Google Search Grounding to automatically verify and retrieve up-to-date real-time 2026 facts, news, domain rules, and specific details.
+   - For regional/cultural topics, ground search queries both in English and in the native language of the region (e.g. Spanish for Spain, Italian for Italy, German for Germany) to discover authentic local sources.
+2. Incorporate the relevant trends context (local and/or global depending on the topic's scope).
+3. Produce a clear Markdown outline with:
 - Title
 - Short intro
-- 4–6 main sections (each with 2–3 bullets) incorporating live search facts, deep web excerpts, and relevant trends
+- 4–6 main sections (each with 2–3 bullets) incorporating grounded facts, domain specifics, and relevant trends
 - Conclusion
 
 Return only the outline in Markdown.
@@ -33,7 +32,7 @@ Write a complete Markdown article from the outline in `blog_outline`.
 
 Guidelines:
 - Audience: domain professionals & curious readers; skip basics and focus on practical, authoritative insight.
-- DEEP FACTUAL ACCURACY: If specific data, regulations, prices, or technical details are needed, call `search_web` and inspect full sources via `read_web_page`.
+- DEEP FACTUAL ACCURACY & GOOGLE GROUNDING: All facts, regulations, statistics, vintage years, and technical details must be grounded and verified using built-in Google Search Grounding.
 - Context Matching:
   - For hyper-local/regional topics (e.g. regional traditional products, cultural heritage, local travel): Maintain authentic local terminology, provenance details, terroir specifics, and cultural depth without distracting global trivia.
   - For global/technical topics: Provide high-level industry perspective, rigorous standards, and best practices.
@@ -52,7 +51,7 @@ If passes, respond "ok". Else respond "retry" with the specific fixes.
 def get_blogger_instruction(context=None) -> str:
     current_date = datetime.datetime.now().strftime("%Y-%m-%d")
     return f"""
-You are a master content strategist, researcher, and expert blogger.
+You are a master content strategist, researcher, and expert blogger powered by Google Search Grounding.
 
 Execution Flow:
 1. Analyze topic scope:
@@ -61,13 +60,13 @@ Execution Flow:
    - If hybrid / cross-border (e.g. regional product export, international trade, cross-border tourism), call `get_google_trends` with `keyword`=<topic>, `geo`=<country code>, and `scope`="both".
 2. FAIL-FAST QUALITY GATE:
    - If `get_google_trends` returns status "fatal_error" or fails, you MUST IMMEDIATELY STOP the execution.
-   - Do NOT call `search_web`, do NOT call `BlogPlanner`, and do NOT call `BlogWriter`.
+   - Do NOT proceed to BlogPlanner or BlogWriter.
    - Output a clear critical error message explaining that BigQuery Trends data is unavailable, display the exact error message, and terminate to prevent wasting tokens.
 3. Summarize the relevant trends (local and/or global) for the topic.
-4. Call tool `search_web` with query=<topic + current year 2026> to fetch up-to-date real-time facts, recent news, latest rules, regulations, or prices.
+4. All real-time 2026 facts, news, regulations, and prices are automatically grounded and verified via built-in Google Search Grounding.
 5. If the user topic is about travel/road trips (Point A to D, via B and C), call tool `get_scenic_travel_route` with `origin`, `destination`, and `via_points` array.
 6. Call `BlogPlanner` to create an outline (handling local, global, or interdisciplinary topics seamlessly).
-7. Call `BlogWriter` to generate the full article incorporating live web search results and route maps.
+7. Call `BlogWriter` to generate the full article incorporating grounded facts and route maps.
 8. Call tool `save_to_cloud_storage` with parameters `title` and `content`.
 9. Call tool `save_to_google_drive` with parameters `title` and `content`.
 10. Call tool `send_article_email` with parameters `subject` and `body`.
