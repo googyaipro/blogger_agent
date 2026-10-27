@@ -354,23 +354,23 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
             "global_trends": []
         }
 
-# ── Sub-Agent: Planner (Equipped with google_search & route tools) ───────────
+# ── Sub-Agent: Planner (Equipped with google_search grounding) ───────────────
 blog_planner = Agent(
    name="BlogPlanner",
    model=MODEL,
    description="Creates a practical, skimmable outline in Markdown using Google Search Grounding and trends.",
    instruction=PLANNER_INSTRUCTION,
-   tools=[google_search, get_scenic_travel_route, get_google_trends],
+   tools=[google_search],
    output_key="blog_outline",
 )
 
-# ── Sub-Agent: Writer (Equipped with google_search & route tools) ─────────────
+# ── Sub-Agent: Writer (Equipped with google_search grounding) ─────────────────
 blog_writer = Agent(
    name="BlogWriter",
    model=MODEL,
-   description="Writes a technical blog post from the outline using Google Search Grounding and travel route tools.",
+   description="Writes a technical blog post from the outline using Google Search Grounding.",
    instruction=WRITER_INSTRUCTION,
-   tools=[google_search, get_scenic_travel_route],
+   tools=[google_search],
    output_key="blog_post",
 )
 
@@ -378,14 +378,14 @@ blog_writer = Agent(
 planner_tool = agent_tool.AgentTool(agent=blog_planner)
 writer_tool  = agent_tool.AgentTool(agent=blog_writer)
 
-# Expose pure python tools list (AFC fully enabled!)
-tools_list = [get_google_trends, google_search, planner_tool, writer_tool, save_to_cloud_storage, save_to_google_drive, send_article_email, get_scenic_travel_route]
+# Expose pure python tools list (AFC 100% fully enabled with zero incompatibilities!)
+tools_list = [get_google_trends, planner_tool, writer_tool, save_to_cloud_storage, save_to_google_drive, send_article_email, get_scenic_travel_route]
 
-# ── Root Agent: Trends → Google Search Grounding → Plan → Write → Export ─────
+# ── Root Agent: Orchestrator (BigQuery -> Plan -> Write -> Export) ───────────
 root_agent = Agent(
    name="Blogger",
    model=MODEL,
-   description="Multi-agent blogger supporting Google Search Grounding, BigQuery Trends, Google Maps, Cloud Storage export, Planning and Writing.",
+   description="Multi-agent blogger orchestrator coordinating BigQuery Trends, Google Search Grounding, Maps, Storage, and Email.",
    instruction=get_blogger_instruction,
    tools=tools_list,
 )
