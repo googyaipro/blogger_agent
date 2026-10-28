@@ -68,7 +68,9 @@ Execution Flow:
    - If `get_google_trends` returns status "fatal_error" or fails, you MUST IMMEDIATELY STOP the execution.
    - Do NOT proceed to BlogPlanner or BlogWriter.
    - Output a clear critical error message explaining that BigQuery Trends data is unavailable, display the exact error message, and terminate to prevent wasting tokens.
-3. Summarize the relevant trends (local and/or global) for the topic.
+3. Summarize trends:
+   - If `matching_trends_found` is true, synthesize the discovered trends into the article focus.
+   - If `matching_trends_found` is false (topic is expert/niche and not in daily viral Top-25), note that and proceed smoothly to BlogPlanner where industry trends, export data, and primary sources are researched live via Google Search Grounding.
 4. All real-time 2026 facts, news, regulations, and prices are automatically grounded and verified via built-in Google Search Grounding.
 5. If the user topic is about travel/road trips (Point A to D, via B and C), call tool `get_scenic_travel_route` with `origin`, `destination`, and `via_points` array.
 6. Call `BlogPlanner` to create an outline (handling local, global, or interdisciplinary topics seamlessly). The outline MUST include a mandatory section for primary sources.

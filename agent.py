@@ -256,10 +256,13 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
     """
     Fetches official 100% stable Google search trends using BigQuery Public Datasets.
     Supports smart scope selection:
-    - 'local': Fetches only regional country-specific trends (ideal for local/niche/cultural topics like 'Georgian wines', 'Bavarian castles').
-    - 'global': Fetches only worldwide trends (ideal for universal tech/science topics like 'AI agents', 'Quantum computing').
-    - 'both' / 'auto': Fetches and synthesizes both local and worldwide trends (ideal for hybrid/export topics).
+    - 'local': Regional country-specific trends.
+    - 'global': Worldwide trends.
+    - 'both' / 'auto': Checks local and worldwide trends.
+    If the topic is niche/expert and has no viral surges in the Top 25 daily trends,
+    gracefully signals that primary research should be handled via Google Search Grounding.
     """
+    import re
     search_keyword = keyword.strip() if keyword else "technology"
     geo_code = (geo or "US").upper()
     target_scope = (scope or "auto").lower()
@@ -277,67 +280,80 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
         local_topics = []
         global_topics = []
 
-        # 1. Local Regional Trends (using international_top_terms with country_code filter)
+        # Extract search tokens with unicode support (skip short words < 3 chars)
+        clean_kw = search_keyword.lower()
+        words = [re.escape(w) for w in re.findall(r'[\w]+', clean_kw) if len(w) >= 3][:4]
+        if words:
+            search_terms = [re.escape(clean_kw)] + words
+            seen = set()
+            unique_terms = []
+            for t in search_terms:
+                if t not in seen:
+                    seen.add(t)
+                    unique_terms.append(t)
+            regex_pattern = r'(?i)(^|[^\p{L}\p{N}])(' + '|'.join(unique_terms) + r')([^\p{L}\p{N}]|$)'
+        else:
+            regex_pattern = r'(?i)(^|[^\p{L}\p{N}])(' + re.escape(clean_kw) + r')([^\p{L}\p{N}]|$)'
+
+        # 1. Local Regional Trends (filtered by country_code AND keyword regex)
         if target_scope in ("local", "both", "auto"):
             query_local = """
                 SELECT term, MIN(rank) as best_rank, MAX(refresh_date) as latest_date
                 FROM `bigquery-public-data.google_trends.international_top_terms`
-                WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
+                WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
                   AND country_code = @country_code
-                  AND LOWER(term) LIKE @pattern
+                  AND REGEXP_CONTAINS(LOWER(term), @pattern)
                 GROUP BY term
                 ORDER BY best_rank ASC, latest_date DESC
                 LIMIT 5
             """
             job_config = bigquery.QueryJobConfig(
                 query_parameters=[
-                    bigquery.ScalarQueryParameter("pattern", "STRING", f"%{search_keyword.lower()}%"),
+                    bigquery.ScalarQueryParameter("pattern", "STRING", regex_pattern),
                     bigquery.ScalarQueryParameter("country_code", "STRING", geo_code),
                 ]
             )
             local_results = client.query(query_local, job_config=job_config).result()
             local_topics = [row.term for row in local_results]
 
-            if not local_topics:
-                query_country_top = """
-                    SELECT term, MIN(rank) as best_rank, MAX(refresh_date) as latest_date
-                    FROM `bigquery-public-data.google_trends.international_top_terms`
-                    WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY)
-                      AND country_code = @country_code
-                    GROUP BY term
-                    ORDER BY best_rank ASC, latest_date DESC
-                    LIMIT 5
-                """
-                country_config = bigquery.QueryJobConfig(
-                    query_parameters=[
-                        bigquery.ScalarQueryParameter("country_code", "STRING", geo_code)
-                    ]
-                )
-                local_topics = [row.term for row in client.query(query_country_top, job_config=country_config).result()]
-
-        # 2. Global Worldwide Trends
+        # 2. Global Worldwide Trends (STRICTLY filtered by keyword regex)
         if target_scope in ("global", "both", "auto"):
             query_global = """
-                SELECT term, MIN(rank) as best_rank, MAX(refresh_date) as latest_date
+                SELECT term, country_name, MIN(rank) as best_rank, MAX(refresh_date) as latest_date
                 FROM `bigquery-public-data.google_trends.international_top_terms`
-                WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
-                GROUP BY term
+                WHERE refresh_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+                  AND REGEXP_CONTAINS(LOWER(term), @pattern)
+                GROUP BY term, country_name
                 ORDER BY best_rank ASC, latest_date DESC
                 LIMIT 5
             """
-            global_topics = [row.term for row in client.query(query_global).result()]
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("pattern", "STRING", regex_pattern),
+                ]
+            )
+            global_results = client.query(query_global, job_config=job_config).result()
+            global_topics = [f"{row.term} ({row.country_name})" for row in global_results]
 
-        if target_scope in ("both", "auto") and not local_topics:
-            local_topics = global_topics[:3]
+        matching_trends_found = bool(local_topics or global_topics)
+        if matching_trends_found:
+            msg = f"Found matching trends for '{search_keyword}' in BigQuery Google Trends."
+        else:
+            msg = (
+                f"Запрос '{search_keyword}' является нишевым/экспертным и не зафиксирован в суточном топ-25 вирусных запросов Google Trends (BigQuery). "
+                f"Отраслевая аналитика, статистика и тренды будут полноценно получены через встроенный Google Search Grounding."
+            )
 
-        print(f"=== TRENDS SUCCESS (scope={target_scope}): Local ({geo_code}): {local_topics} | Global: {global_topics} ===", file=sys.stderr, flush=True)
+        print(f"=== TRENDS RESULT (found={matching_trends_found}, scope={target_scope}): Local ({geo_code}): {local_topics} | Global: {global_topics} ===", file=sys.stderr, flush=True)
         return {
             "status": "ok",
             "keyword": search_keyword,
             "scope": target_scope,
             "local_geo": geo_code,
+            "matching_trends_found": matching_trends_found,
             "local_trends": local_topics,
-            "global_trends": global_topics
+            "global_trends": global_topics,
+            "message": msg
         }
 
     except Exception as e:
@@ -350,6 +366,7 @@ def get_google_trends(keyword: str = "", geo: str = "US", scope: str = "auto") -
             "keyword": search_keyword,
             "scope": target_scope,
             "local_geo": geo_code,
+            "matching_trends_found": False,
             "local_trends": [],
             "global_trends": []
         }
