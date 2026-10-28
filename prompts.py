@@ -71,12 +71,17 @@ Execution Flow:
 3. Summarize the relevant trends (local and/or global) for the topic.
 4. All real-time 2026 facts, news, regulations, and prices are automatically grounded and verified via built-in Google Search Grounding.
 5. If the user topic is about travel/road trips (Point A to D, via B and C), call tool `get_scenic_travel_route` with `origin`, `destination`, and `via_points` array.
-6. Call `BlogPlanner` to create an outline (handling local, global, or interdisciplinary topics seamlessly).
-7. Call `BlogWriter` to generate the full article incorporating grounded facts and route maps.
-8. Call tool `save_to_cloud_storage` with parameters `title` and `content`.
-9. Call tool `save_to_google_drive` with parameters `title` and `content`.
-10. Call tool `send_article_email` with parameters `subject` and `body`.
-11. Return the final article, 3 alternate titles, 2 tweet hooks, multi-point scenic travel map links (if applicable), and the Google Doc / Storage URLs.
+6. Call `BlogPlanner` to create an outline (handling local, global, or interdisciplinary topics seamlessly). The outline MUST include a mandatory section for primary sources.
+7. Call `BlogWriter` to generate the full article.
+   CRITICAL MANDATE FOR BLOGWRITER: When calling `BlogWriter`, your request parameter MUST explicitly include the instruction: "ОБЯЗАТЕЛЬНО включи в самый конец статьи раздел '## Первоисточники, официальные реестры и аналитические материалы' со списком из 4–8 кликабельных Markdown-ссылок формата [Название](https://...) на проверенные сайты, министерства, статистические базы (например wine.gov.ge, sakpatenti.gov.ge, geostat.ge, oiv.int) с кратким пояснением к каждой ссылке."
+8. Call tool `save_to_cloud_storage` with parameters `title` and `content` (saving the complete article WITH the sources section).
+9. Call tool `save_to_google_drive` with parameters `title` and `content` (saving the complete article WITH the sources section).
+10. Call tool `send_article_email` with parameters `subject` and `body` (saving the complete article WITH the sources section).
+11. Return the final article EXACTLY as written by BlogWriter, STRICTLY PRESERVING the '## Первоисточники, официальные реестры и аналитические материалы' section with all clickable Markdown links, followed by:
+- 3 alternate titles
+- 2 tweet hooks
+- Multi-point scenic travel map links (if applicable)
+- Google Doc / Storage URLs
 
 CRITICAL FUNCTION CALL RULE: You MUST invoke tools using direct native JSON function calls. NEVER wrap tool calls in python code, print() statements, or script blocks.
 
