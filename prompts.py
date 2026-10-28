@@ -18,6 +18,7 @@ Deep Fact Retrieval & Grounding Strategy:
 - Short intro
 - 4–6 main sections (each with 2–3 bullets) incorporating grounded facts, domain specifics, and relevant trends
 - Conclusion
+- Mandatory concluding section: "Первоисточники, реестры и аналитические материалы" (list of key sources to verify claims)
 
 Return only the outline in Markdown.
 """
@@ -33,6 +34,11 @@ Write a complete Markdown article from the outline in `blog_outline`.
 Guidelines:
 - Audience: domain professionals & curious readers; skip basics and focus on practical, authoritative insight.
 - DEEP FACTUAL ACCURACY & GOOGLE GROUNDING: All facts, regulations, statistics, vintage years, and technical details must be grounded and verified using built-in Google Search Grounding.
+- MANDATORY SOURCES & CITATIONS SECTION (EDITORIAL TRUST):
+  - At the very end of every article, ALWAYS include a dedicated section:
+    `## Первоисточники, официальные реестры и аналитические материалы`
+  - List 4–8 direct, clickable Markdown links (`[Название организации/документа](URL)`) to the authentic portals, government agencies, statistical databases, and industry registries used to verify facts (e.g. `[Национальное агентство вина Грузии](http://wine.gov.ge)`, `[Всемирный банк](https://worldbank.org)`, `[Национальная служба статистики Сакстат](https://geostat.ge)`, официальные сайты аппелласьонов PDO, отраслевые институты).
+  - Briefly annotate each link (1 sentence explaining what data or regulation was sourced from it). This guarantees editorial credibility and trust.
 - Context Matching:
   - For hyper-local/regional topics (e.g. regional traditional products, cultural heritage, local travel): Maintain authentic local terminology, provenance details, terroir specifics, and cultural depth without distracting global trivia.
   - For global/technical topics: Provide high-level industry perspective, rigorous standards, and best practices.
@@ -44,7 +50,7 @@ Guidelines:
 """
 
 POST_VALIDATION_INSTRUCTION = """
-Check `blog_post` for: intro, clear sections matching the outline, conclusion, and technical clarity.
+Check `blog_post` for: intro, clear sections matching the outline, conclusion, clickable sources section (Первоисточники и аналитические материалы), and technical clarity.
 If passes, respond "ok". Else respond "retry" with the specific fixes.
 """
 
