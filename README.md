@@ -1,43 +1,47 @@
 # 🚀 Blogger Agent MCP & AI Universal Content Generation Engine
 
-**Blogger Agent MCP** — это автономная мультиагентная система на базе **Google Agent Development Kit (ADK)** и флагманской модели **Gemini 3.8 Flash** (Vertex AI Global Endpoint), предназначенная для глубокого аналитического исследования трендов через **Google BigQuery**, живого поиска актуальных фактов в вебе, автоматического построения многоточечных маршрутов в **Google Maps**, написания экспертных лонгридов по любым профильным и междисциплинарным темам, публикации документов в **Google Docs** и рассылки по **Gmail**.
+**[English](README.md) | [Русский](README_RU.md)**
 
 ---
 
-## 🌟 Ключевые возможности
-
-* 🧠 **Мультиагентный универсальный пайплайн (Google ADK & Gemini 3.8 Flash):** Использование профильных субагентов `BlogPlanner` *(Senior Content Strategist & Structural Editor)* и `BlogWriter` под управлением оркестратора `Root Agent`. Подключение к Vertex AI через глобальный динамический балансировщик (`GOOGLE_CLOUD_LOCATION="global"`).
-* 🎯 **Умный селектор масштаба темы (Smart Topic Scope):**
-  * 📍 **`scope="local"` (Гиперлокальный):** Для региональной традиционной продукции, локальных ремесел, кулинарии и путеводителей. Запрашиваются только тренды выбранной страны (`geo`), а мировой инфошум полностью отсекается (`global_trends = []`).
-  * 🌍 **`scope="global"` (Мировой):** Для глобальных тем (AI, квантовые вычисления, облачные архитектуры).
-  * 🌐 **`scope="both"` (Гибридный):** Для вопросов экспорта, международной торговли и транзитного туризма.
-* 📊 **Официальный BigQuery Engine (Dual-Scope Trend Synthesis):** Замена неофициального парсинга на **прямые SQL-запросы к датасету `bigquery-public-data.google_trends.international_top_terms`**. Точная фильтрация по ISO-кодам стран без прокси и без блокировок 429/403!
-* 🛑 **Fail-Fast Quality Gate (Защита от сжигания токенов):** Никаких фейковых «заглушек». Если BigQuery недоступен, пайплайн моментально останавливается на шаге 1 с выводом точной ошибки, предотвращая напрасный расход тысяч токенов LLM на некачественные статьи.
-* 🌐 **Нативный Google Search Grounding:** Встроенное в Gemini заземление на живой глобальный индекс Google (5 000 бесплатных запросов в месяц). Модель автоматически проверяет факты, регламенты, цены и статистику в реальном времени с автоматической привязкой цитат к первоисточникам. Никаких нестабильных сторонних скраперов и капч!
-* 🗺 **Гранд-Тур маршрутизатор (`get_scenic_travel_route`):** Построение сложных автопутешествий **Точка А ➔ Б ➔ В ➔ Г** через Google Places & Routes API с безопасным экранированием кириллицы (`urllib.parse.urlencode`) и генерацией интерактивных карт.
-* 🔒 **Бессрочная OAuth 2.0 авторизация & Fallback Storage:** Режим **In production** с параметром `access_type="offline"` гарантирует вечную жизнь токенов. При любых временных сбоях Google Drive статья автоматически сохраняется в **Google Cloud Storage (GCS)** (нулевой риск потери контента).
-* 🐳 **Облегченный Docker-образ:** Удален лишний стек Node.js/npm, контейнер уменьшен на **~350 МБ** (чистый Python 3.11-slim, быстрая сборка).
+**Blogger Agent MCP** is an autonomous multi-agent system powered by the **Google Agent Development Kit (ADK)** and the flagship **Gemini 3.8 Flash** model (Vertex AI Global Endpoint). It is designed for deep analytical trend research via **Google BigQuery**, real-time live fact-checking across the web, automated multi-stop route construction in **Google Maps**, authoring comprehensive long-form articles on any specialized or cross-disciplinary topic, publishing documents to **Google Docs**, and dispatching drafts via **Gmail**.
 
 ---
 
-## 🏗 Архитектура пайплайна
+## 🌟 Key Features
+
+* 🧠 **Multi-Agent Universal Pipeline (Google ADK & Gemini 3.8 Flash):** Leverages specialized sub-agents: `BlogPlanner` *(Senior Content Strategist & Structural Editor)* and `BlogWriter` *(Master Writer)* orchestrated by the `Root Agent`. Connects to Vertex AI via the global dynamic load balancer (`GOOGLE_CLOUD_LOCATION="global"`).
+* 🎯 **Smart Topic Scope Selector:**
+  * 📍 **`scope="local"` (Hyperlocal):** For regional traditional products, local crafts, culinary traditions, and travel guides. Fetches trends strictly for the selected country (`geo`), eliminating global noise (`global_trends = []`).
+  * 🌍 **`scope="global"` (Worldwide):** For global subjects (AI, quantum computing, cloud architecture).
+  * 🌐 **`scope="both"` (Hybrid):** For cross-border topics, export markets, international trade, and transit tourism.
+* 📊 **Official BigQuery Engine (Dual-Scope Trend Synthesis):** Replaces brittle unofficial web scrapers with **direct SQL queries against `bigquery-public-data.google_trends.international_top_terms`**. Accurate filtering by ISO country codes without proxies and free from 429/403 rate limits!
+* 🛑 **Fail-Fast Quality Gate (Token Burn Protection):** No fake mock fallbacks. If BigQuery is unavailable or fails, the pipeline immediately halts at step 1 with an explicit error, preventing wasteful expenditure of thousands of LLM tokens on degraded articles.
+* 🌐 **Native Google Search Grounding:** Built-in Gemini grounding backed by Google's live global index (5,000 free queries/month). The model verifies facts, regulations, pricing, and live statistics in real-time with automatic citations linked to primary sources. No unstable third-party scrapers or CAPTCHAs!
+* 🗺 **Grand Tour Scenic Router (`get_scenic_travel_route`):** Generates complex road trips across multiple waypoints (**Point A ➔ B ➔ C ➔ D**) using Google Places & Routes API, with safe URL-encoding of non-ASCII characters (`urllib.parse.urlencode`) and interactive map generation.
+* 🔒 **Long-Lived OAuth 2.0 Auth & Fallback Storage:** Configured in **In production** mode with `access_type="offline"` to ensure perpetual token renewal. In case of temporary Google Drive API issues, articles are automatically backed up to **Google Cloud Storage (GCS)** (zero risk of content loss).
+* 🐳 **Lightweight Docker Image:** Stripped of unnecessary Node.js/npm dependencies, shrinking the container image by **~350 MB** (pure Python 3.11-slim, fast builds).
+
+---
+
+## 🏗 Pipeline Architecture
 
 ```
-[Пользовательский Запрос (Любая профильная или смежная тема)]
+[User Request (Any specialized or multidisciplinary topic)]
         │
         ▼
 [Root Agent (Blogger Orchestrator)]
         │
         ├──> 1. Smart Topic Scope Selector (prompts.py)
-        │        ├──> scope="local"  -> Только региональные тренды выбранной страны
-        │        ├──> scope="global" -> Только мировые глобальные тренды
-        │        └──> scope="both"   -> Синтез локальных и мировых трендов
+        │        ├──> scope="local"  -> Regional trends for selected country only
+        │        ├──> scope="global" -> Worldwide global trends only
+        │        └──> scope="both"   -> Synthesis of local and global trends
         │
         ├──> 2. Official BigQuery Trends Engine (get_google_trends)
         │        └──> `bigquery-public-data.google_trends.international_top_terms`
         │
         ├──> 3. Native Google Search Grounding (google_search)
-        │        └──> 5 000 бесплатных запросов/мес по глобальному индексу Google
+        │        └──> 5,000 free queries/month across Google's global index
         │
         ├──> 4. Scenic Route Planner (get_scenic_travel_route / Places & Routes API)
         │
@@ -53,36 +57,36 @@
 
 ---
 
-## ⚙️ Переменные окружения (`.env`)
+## ⚙️ Environment Variables (`.env`)
 
-Создайте файл `.env` в корневом каталоге проекта:
+Create a `.env` file in the root directory of the project:
 
 ```env
-# Модель и регион Google Cloud Vertex AI
+# Google Cloud Vertex AI Model & Region
 MODEL=gemini-3.8-flash
 GOOGLE_CLOUD_LOCATION=global
 GOOGLE_GENAI_USE_VERTEXAI=TRUE
 
-# Ключ Google Maps Platform API
+# Google Maps Platform API Key
 GOOGLE_MAPS_API_KEY=AIzaSyYourGoogleMapsApiKeyHere12345
 
-# Хранилище Google Cloud Storage
+# Google Cloud Storage Bucket
 GCS_BUCKET_NAME=your-gcs-bucket-name
 
-# OAuth 2.0 Desktop Credentials (для личного Google Диска и Gmail)
+# OAuth 2.0 Desktop Credentials (for Google Drive & Gmail)
 OAUTH_CLIENT_ID=123456789012-yourclientid.apps.googleusercontent.com
 OAUTH_CLIENT_SECRET=GOCSPX-yourClientSecretHere123456
 OAUTH_REFRESH_TOKEN=1//04yourRefreshTokenHere_abcdefghijklmnopqrstuvwxyz
 
-# Email для уведомлений
+# Email recipient for notifications and drafts
 NOTIFICATION_EMAIL=your_email@gmail.com
 ```
 
 ---
 
-## 📦 Быстрая установка и локальный запуск
+## 📦 Quickstart & Local Setup
 
-### 1. Клонирование репозитория и создание venv
+### 1. Clone Repository & Setup Virtual Environment
 ```bash
 git clone -b bigquery https://github.com/googyaipro/blogger_agent.git
 cd blogger_agent
@@ -91,28 +95,28 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2. Установка зависимостей
+### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Авторизация OAuth 2.0 (Однократный запуск)
-Для получения своего бессрочного `OAUTH_REFRESH_TOKEN` запустите скрипт авторизации:
+### 3. OAuth 2.0 Authorization (One-time Setup)
+To obtain your long-lived `OAUTH_REFRESH_TOKEN`, run the token generation script:
 ```bash
 python generate_oauth_token.py
 ```
-Авторизуйтесь в открывшемся браузере под своим Google-аккаунтом и скопируйте полученный `refresh_token` в `.env` и в Google Cloud Secret Manager.
+Sign in with your Google Account in the browser window that opens, and copy the resulting `refresh_token` into your `.env` file and Google Cloud Secret Manager.
 
-### 4. Локальный запуск агента
+### 4. Run the Agent Locally
 ```bash
 python agent.py
 ```
 
 ---
 
-## 🐳 Развертывание в Docker / Cloud Run / Dokploy
+## 🐳 Deployment (Docker / Cloud Run / Dokploy)
 
-### 1. Деплой в Google Cloud Run (Рекомендуемый способ)
+### 1. Deploy to Google Cloud Run (Recommended)
 ```bash
 gcloud run deploy bloggeragentmcpv03 \
   --source . \
@@ -125,29 +129,29 @@ gcloud run deploy bloggeragentmcpv03 \
 
 ---
 
-### 2. Запуск через Docker Compose
+### 2. Run with Docker Compose
 ```bash
 docker compose up -d
 ```
 
 ---
 
-### 3. Деплой в Dokploy (VPS)
-1. Создайте **Application** в панели Dokploy.
-2. В **Build Type** выберите `Dockerfile`.
-3. Заполните переменные во вкладке **Environment**.
-4. Загрузите файл сервисного аккаунта `/app/gcp-key.json` во вкладку **File Mounts** для Vertex AI & BigQuery.
-5. Нажмите **Deploy**.
+### 3. Deploy to Dokploy (VPS)
+1. Create a new **Application** in Dokploy dashboard.
+2. Under **Build Type**, select `Dockerfile`.
+3. Fill in the variables under the **Environment** tab.
+4. Mount your Service Account JSON key `/app/gcp-key.json` under **File Mounts** for Vertex AI & BigQuery authentication.
+5. Click **Deploy**.
 
 ---
 
-## 📚 Дополнительная документация проекта
+## 📚 Additional Documentation
 
-* 📑 [**Итоговая ретроспектива проекта**](PROJECT_RETROSPECTIVE.md) — детальный разбор проблем, решений и результатов.
-* 🛠 [**Шпаргалка по командам gcloud**](gcloud_cheatsheet.md) — справочник команд для управления инфраструктурой, Secret Manager и Cloud Run.
-* 📊 [**Интерактивный Pitch Deck**](blogger_agent_pitch_deck.html) — презентационный мокап для печати в PDF.
+* 📑 [**Project Retrospective**](PROJECT_RETROSPECTIVE.md) — in-depth breakdown of architectural challenges, solutions, and benchmarks.
+* 🛠 [**gcloud Cheatsheet**](gcloud_cheatsheet.md) — reference guide for infrastructure commands, Secret Manager, and Cloud Run.
+* 📊 [**Interactive Pitch Deck**](blogger_agent_pitch_deck.html) — presentation mockup ready for PDF export.
 
 ---
 
-## 📝 Лицензия
+## 📝 License
 MIT License © 2026 Blogger Agent MCP Team.
